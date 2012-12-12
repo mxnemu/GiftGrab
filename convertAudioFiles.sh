@@ -23,6 +23,11 @@ do
     `avconv -v warning -y -i ${A} ./audio/conversions/${filename}.wav`
     echo "done!"
     
+    # x to ogg
+    #echo "converting ${A} to ./audio/conversions/${filename}.ogg ... \c"
+    #`avconv -v warning -y -i ${A} -acodec libvorbis -f ogg ./audio/conversions/${filename}.ogg`
+    #echo "done!"
+    
     # I disabled this conversion, because you need a license to use mp3 in your app
     # An additional package libmp3lame is also required
     # ogg to mp3

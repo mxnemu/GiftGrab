@@ -47,6 +47,14 @@ function randomBoolean() {
     return Math.random() > 0.5;
 }
 
+function randomInRange(minResult, maxResult) {
+    return minResult + (Math.random()*(maxResult-minResult))
+}
+
+function randomElementInArray(array) {
+    return array[Math.floor(randomInRange(0, array.length))];
+}
+
 // ie8 does not supply a console object, when you don't open the dev tools
 if (!window.console) {
     window.console = {

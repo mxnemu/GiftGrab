@@ -39,14 +39,43 @@ function Application () {
     this.world = new b2World(new b2Vec2(0, -10), true);
     this.world.SetContactListener(new CollisionHandler());
     
+    this.backgroundSprite = new cc.Sprite({
+        file: "images/brickwall.png"
+    });
+    this.backgroundSprite.anchorPoint =new cc.Point(0,0);
+    this.addChild(this.backgroundSprite);
+    
+    
+    this.score = 0;
+    this.scoreLabel = new cc.Label({string: "Score: 0"});
+    this.scoreLabel.position = new cc.Point(s.width - 100,20)
+    this.addChild(this.scoreLabel);
+    
+    this.giftsCollected = 0;
+    this.giftsLabel = new cc.Label({string: "Gifts: 0"});
+    this.giftsLabel.position = new cc.Point(s.width - 200,20)
+    this.addChild(this.giftsLabel);
+    
+    this.giftBoxesDropped = 0;
+    this.droppedLabel = new cc.Label({string: "Dropped: 0"});
+    this.droppedLabel.position = new cc.Point(s.width - 320,20)
+    this.addChild(this.droppedLabel);    
+    
+    this.worldborder = new PhysicsNode();
+    this.worldborder.type = "worldborder";
+    this.worldborder.position = new cc.Point(s.width/2, s.height);
+    this.worldborder.createPhysics(this.world, {boundingBox: new cc.Size(s.width+100, s.height*2), isSensor:true, isStatic:true})
+    
     //setup debug draw
-    var debugDraw = new b2DebugDraw()
-        debugDraw.SetSprite(debugCanvas.getContext("2d"))
-        debugDraw.SetDrawScale(PhysicsNode.physicsScale)
-        debugDraw.SetFillAlpha(0.5)
-        debugDraw.SetLineThickness(1.0)
-        debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit)
-    this.world.SetDebugDraw(debugDraw);
+    if (window.G.debug) {
+        var debugDraw = new b2DebugDraw()
+            debugDraw.SetSprite(debugCanvas.getContext("2d"))
+            debugDraw.SetDrawScale(PhysicsNode.physicsScale)
+            debugDraw.SetFillAlpha(0.5)
+            debugDraw.SetLineThickness(1.0)
+            debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit)
+        this.world.SetDebugDraw(debugDraw);
+    }
 }
 
 Application.inherit(cc.Layer, {
@@ -56,6 +85,13 @@ Application.inherit(cc.Layer, {
     timePassedWithoutUpdate: 0,
     frameSecondTimer: 0,
     frameUpdateCounter: 0,
+    onPhysicsUpdatedCallbacks: [],
+    spawnPositions: [],
+    lastSpawnPositionIndex: -1,
+    giftSprites: ["images/kidney.png", "images/money.png"],
+    // non physics objects that need an update
+    // I'm too tired to fix this mess with a proper game class
+    updateObjects:[], 
     
     // store inputs for realtime requests
     keyDown: function(event) {
@@ -65,46 +101,98 @@ Application.inherit(cc.Layer, {
     keyUp: function(event) {
         Input.instance.keysDown[event.keyCode] = false;
     },
+    
+    destroyGiftbox: function(giftbox) {
+        giftbox.destroyed = true;
+        this.giftBoxesDropped++;
+        this.droppedLabel.string = "Dropped: " + this.giftBoxesDropped;
+        var _this = this;
+        this.onPhysicsUpdatedCallbacks.push(function() {
+            _this.giftbox = new GiftBox();
+            _this.giftbox.setupPhysics(_this.world);
+            _this.addChild(_this.giftbox);
+        });
+    },
+
+    spawnGift: function() {
+        var newPositionIndex = this.lastSpawnPositionIndex +1;
+        if (newPositionIndex >= this.spawnPositions.length) {
+            newPositionIndex = 0;
+        }
+        var gift = new Gift(this.spawnPositions[newPositionIndex].image);
+        gift.position = this.spawnPositions[newPositionIndex].position;
+        gift.score = this.spawnPositions[newPositionIndex].score;
+        this.lastSpawnPositionIndex = newPositionIndex;
+        //gift.position = new cc.Point(randomInRange(250, 350), randomInRange(250, 400));
+        //gift.poisition = new cc.Point(250, 350);
+        //randomInRange(0, this.spawnPositions.length);
+        //gift.position = this.spawnPositions[randomInRange(0, this.spawnPositions.length)];
+        gift.setupPhysics(this.world);
+        this.addChild(gift);
+        this.gift = gift;
+    },
+    
+    rainGifts: function() {
+        var numberOfGifts = randomInRange(10, 30);
+        for (var i=0; i < numberOfGifts; ++i) {
+            var spriteName = randomElementInArray(this.giftSprites);
+            console.log("saw "+ spriteName)
+            var gift = new Gift(spriteName);
+            gift.position = new cc.Point(400, 450);
+            gift.createPhysics(this.world, {boundingBox: new cc.Size(20,20)});
+            gift.body.ApplyImpulse(new b2Vec2(randomInRange(-0.2,0.9), 0), gift.body.GetWorldCenter());
+            this.addChild(gift);
+        }
+    },
+    
+    onGiftPickup: function(gift) {
+        var _this = this;
+        
+        this.giftsCollected++;
+        this.giftsLabel.string = "Gifts: " + this.giftsCollected;
+        
+        this.score += gift.score;
+        this.scoreLabel.string = "Score: " + this.score;
+        
+        if (gift == this.gift) {
+            this.onPhysicsUpdatedCallbacks.push(function() {_this.spawnGift()});
+        }
+        gift.onPickup();
+    },
 
     // Example setup replace it with your own
     createExampleGame: function() {
-        var box = new PhysicsNode();
-        box.type = "box"; // used in CollisionHandler
-        box.position = new cc.Point(400, 400);
-        box.rotation = 25;
-        box.createPhysics(this.world, {boundingBox: new cc.Size(50, 50)});
-        this.addChild(box);
+        this.spawnPositions.push({position:new cc.Point(250, 250), image:"images/candycane.png", score: 10 });
+        this.spawnPositions.push({position:new cc.Point(250, 350), image:"images/money.png", score: 10 });
+        this.spawnPositions.push({position:new cc.Point(400, 250), image:"images/candycane.png", score: 10 });
+        this.spawnPositions.push({position:new cc.Point(400, 350), image:"images/kidney.png", score: 52 });
+        this.spawnPositions.push({position:new cc.Point(300, 350), image:"images/candybon.png", score: 100 });
+    
+        this.leftBumper = new Bumper();
+        this.leftBumper.rotation = 45;
+        this.leftBumper.position = new cc.Point(50,450);
+        this.leftBumper.setupPhysics(this.world);
+        this.addChild(this.leftBumper);
         
-        var ground = new PhysicsNode();
-        ground.type = "ground";
-        ground.position = new cc.Point(400, 200);
-        ground.createPhysics(this.world, {boundingBox: new cc.Size(400, 10)});
+        this.rightBumper = new Bumper();
+        this.rightBumper.rotation = -45;
+        this.rightBumper.position = new cc.Point(750,450); 
+        this.rightBumper.setupPhysics(this.world);
+        this.addChild(this.rightBumper);
+   
+    
+        this.giftbox = new GiftBox();
+        this.giftbox.setupPhysics(this.world);
+        this.addChild(this.giftbox);
         
-        var jointDef = new b2RevoluteJointDef();
-        jointDef.Initialize(ground.body, this.world.GetGroundBody(), ground.body.GetPosition());
-        jointDef.MaximalForce = 4000;
+        this.seesaw = new Seesaw();
+        this.seesaw.setupPhysics(this.world);
+        this.addChild(this.seesaw);
         
-        ground.joint = this.world.CreateJoint(jointDef);
+        this.spawnGift();
+        //this.rainGifts();
         
-        // set image. It must be listed in the preloader before.
-        ground.addChild(new cc.Sprite({
-            file: "images/ground.png"
-        }));
-        this.addChild(ground);
-        
-        // called in update loop
-        ground.update = function() {
-            PhysicsNode.prototype.update.call(this);
-            
-            if (Input.instance.keysDown[37]) { // left arrow   
-                this.body.ApplyTorque(200);
-            }
-            if (Input.instance.keysDown[39]) { // right arrow
-                this.body.ApplyTorque(-200);
-            }
-        }
-        
-        $(".instructions").append("use left / right arrow keys to rotate the ground");
+        $(".instructions").append("use left / right arrow keys to rotate the board");
     },
     
     // Here's the application's mainloop    
@@ -145,6 +233,8 @@ Application.inherit(cc.Layer, {
         this.world.Step(dt,3, 3);
         this.world.ClearForces();
         
+        //this.game.update(dt);
+        
         var body = this.world.GetBodyList();
         while(body) {
         
@@ -160,6 +250,16 @@ Application.inherit(cc.Layer, {
                 }
             }
             body = body.GetNext();
+        }
+        
+        for (var i=0; i < this.updateObjects.length; ++i) {
+            if (!this.updateObjects[i].destroyed) {
+                this.updateObjects[i].update();
+            } else {
+                this.updateObjects[i].destroy();
+                this.updateObjects.splice(i,1);
+                --i;
+            }
         }
 
         for (var key in this.onPhysicsUpdatedCallbacks) {
@@ -193,10 +293,35 @@ $(function() {
     // list your images here
     // they will be loaded with the loadingscreen before your game starts
     registerResource("images/ground.png", "image/png");
+    registerResource("images/giftbox.png", "image/png");
+    registerResource("images/brickwall.png", "image/png");
+    registerResource("images/candybon.png", "image/png");
+    registerResource("images/candycane.png", "image/png");
+    registerResource("images/bumper.png", "image/png");
+    registerResource("images/kidney.png", "image/png");
+    registerResource("images/money.png", "image/png");
 
     // preload audio files
     // TODO integrate audio loading into the preloader
-    Audiomanager.instance.load({"ogg": "audio/blub.ogg", "aac":"audio/conversions/blub.aac"}, "audio/blub");
+    // implying nameing conventions
+    function registerAudio(name) {
+        Audiomanager.instance.load({ 
+            "ogg": "audio/"+name+".ogg",
+            "aac": "audio/conversions/"+name+".aac",
+            "wav": "audio/conversions/"+name+".wav",
+            
+        }, name); 
+    }
+    
+    registerAudio("die");
+    registerAudio("start");
+    registerAudio("pickup");
+    registerAudio("pickup2");
+    registerAudio("hit");
+    registerAudio("wut");
+    registerAudio("music");
+    
+    Audiomanager.instance.playMusic("music");
     
     // Wait for the director to finish preloading our assets
     cc.addListener(director, 'ready', function (director) {

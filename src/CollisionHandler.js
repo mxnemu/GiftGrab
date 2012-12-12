@@ -31,12 +31,19 @@ CollisionHandler.inherit(b2ContactListener, {
         
         // example collision, check for other collisions by coping this if block
         if (objectA && objectB) {
-            if (objectA.type == "box" && objectB.type == "ground") {
+            if (objectA.type == "giftbox" && objectB.type == "seesaw") {
                 this.boxGroundCollision(objectA, objectB);
-            } else if(objectB.type == "box" && objectA.type == "ground") {
+            } else if(objectB.type == "giftbox" && objectA.type == "seesaw") {
                 this.boxGroundCollision(objectB, objectA);
             }
+            
+            else if (objectA.type == "giftbox" && objectB.type == "gift") {
+                this.boxGiftCollision(objectA, objectB);
+            } else if(objectB.type == "giftbox" && objectA.type == "gift") {
+                this.boxGiftCollision(objectB, objectA);
+            }
         }
+        
     },
     
     EndContact: function(contact, manifold) {
@@ -45,22 +52,38 @@ CollisionHandler.inherit(b2ContactListener, {
         
         // example collision, check for other collisions by coping this if block
         if (objectA && objectB) {
-            if (objectA.type == "box" && objectB.type == "ground") {
-                this.boxGroundCollisionEnd(objectA, objectB);      
-            } else if(objectB.type == "box" && objectA.type == "ground") {
-                this.boxGroundCollisionEnd(objectB, objectA);      
+            // freeze
+            if (objectA.type == "worldborder") {
+                this.freeze(objectB);
+            } 
+            else if (objectB.type == "worldborder") {
+                this.freeze(objectA);
             }
-        }
+        } 
     },
     
     // custom functions to handle the collision of 2 objects
     boxGroundCollision: function(box, ground) {
-        console.log("The box touches the ground");  
-        Audiomanager.instance.play("audio/blub");
+        Audiomanager.instance.play("hit");
     },
     
-    boxGroundCollisionEnd: function(box, ground) {
-        console.log("The box does no longer touch the ground");
-        Audiomanager.instance.play("audio/blub");
+    boxGiftCollision: function(box, gift) {
+        gift.destroyed = true;
+        Application.instance.onGiftPickup(gift)
+    },
+    
+    freeze: function(object) {
+        if (object.onFreeze) {
+            object.onFreeze();
+        }
+        if (object.destroyOnFreeze) {
+            object.destroyed = true;
+        }
+    },
+    
+    boxBumperCollision: function(giftbox, bumper) {
+        Application.instance.onPhysicsUpdatedCallbacks.push(function() {
+            Application.instance.rainGifts();
+        });
     }
 });
