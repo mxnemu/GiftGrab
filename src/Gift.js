@@ -28,5 +28,11 @@ Gift.inherit(PhysicsNode, {
         } else {
             Audiomanager.instance.play("pickup2");
         }
+        
+        if (this.item == "magnet") {
+            Application.instance.pickupMagnet();
+        } else if (this.item == "snowman") {
+            Application.instance.pickupSnowman();
+        }
     }
 });

@@ -61,6 +61,17 @@ function Application () {
     this.droppedLabel.position = new cc.Point(s.width - 320,20)
     this.addChild(this.droppedLabel);    
     
+    this.snowmanbar = new Itembar("images/snowmanIcon.png");
+    this.snowmanbar.position = new cc.Point(120, 20);
+    this.snowmanbar.setAmount(this.snowmans);
+    this.addChild(this.snowmanbar);
+    
+    this.magnetbar = new Itembar("images/magnetIcon.png");
+    this.magnetbar.position = new cc.Point(300, 10);
+    this.magnetbar.setAmount(this.magnets);
+    this.addChild(this.magnetbar);
+    
+    
     this.worldborder = new PhysicsNode();
     this.worldborder.type = "worldborder";
     this.worldborder.position = new cc.Point(s.width/2, s.height);
@@ -90,7 +101,7 @@ Application.inherit(cc.Layer, {
     lastSpawnPositionIndex: -1,
     giftSprites: ["images/kidney.png", "images/money.png"],
     magnets: 1,
-    hourglasses: 1,
+    snowmans: 1,
     // non physics objects that need an update
     // I'm too tired to fix this mess with a proper game class
     updateObjects:[], 
@@ -100,13 +111,20 @@ Application.inherit(cc.Layer, {
         Input.instance.keysDown[event.keyCode] = true;
         
         // up spawn magnet
-        if (event.keyCode == 38 && (!this.magnet || this.magnet.destroyed)) {
+        if (event.keyCode == 38 && this.magnets > 0 && (!this.magnet || this.magnet.destroyed)) {
+            this.magnets--;
+            this.magnetbar.setAmount(this.magnets);
+            Audiomanager.instance.play("magnet");
+            
             this.magnet = new Magnet(this.giftbox);
             this.magnet.setupPhysics(this.world);
             this.addChild(this.magnet);
         } 
         
-        else if(event.keyCode == 40  && !this.giftbox.slowMotion) {
+        else if(event.keyCode == 40  && this.snowmans > 0 && !this.giftbox.slowMotion) {
+            this.snowmans--;
+            this.snowmanbar.setAmount(this.snowmans);
+            Audiomanager.instance.play("ice");
             this.giftbox.startSlowMotion();
         }
         
@@ -137,6 +155,7 @@ Application.inherit(cc.Layer, {
         var gift = new Gift(this.spawnPositions[newPositionIndex].image);
         gift.position = this.spawnPositions[newPositionIndex].position;
         gift.score = this.spawnPositions[newPositionIndex].score;
+        gift.item = this.spawnPositions[newPositionIndex].item;
         this.lastSpawnPositionIndex = newPositionIndex;
         //gift.position = new cc.Point(randomInRange(250, 350), randomInRange(250, 400));
         //gift.poisition = new cc.Point(250, 350);
@@ -174,14 +193,30 @@ Application.inherit(cc.Layer, {
         }
         gift.onPickup();
     },
+    
+    pickupSnowman: function() {
+        this.snowmans++;
+        this.snowmanbar.setAmount(this.snowmans);
+    },
+    
+    pickupMagnet: function() {
+        this.magnets++;
+        this.magnetbar.setAmount(this.magnets);
+    },
 
     // Example setup replace it with your own
     createExampleGame: function() {
         this.spawnPositions.push({position:new cc.Point(250, 250), image:"images/candycane.png", score: 10 });
         this.spawnPositions.push({position:new cc.Point(250, 350), image:"images/money.png", score: 10 });
         this.spawnPositions.push({position:new cc.Point(400, 250), image:"images/candycane.png", score: 10 });
-        this.spawnPositions.push({position:new cc.Point(550, 350), image:"images/kidney.png", score: 52 });
+        this.spawnPositions.push({position:new cc.Point(260, 370), image:"images/snowman.png", score: 150, item:"snowman"});
+        this.spawnPositions.push({position:new cc.Point(350, 300), image:"images/kidney.png", score: 52 });
         this.spawnPositions.push({position:new cc.Point(500, 400), image:"images/candybon.png", score: 100 });
+        this.spawnPositions.push({position:new cc.Point(230, 240), image:"images/money.png", score: 10 });
+        this.spawnPositions.push({position:new cc.Point(500, 400), image:"images/magnet.png", score: 150, item:"magnet"});
+        this.spawnPositions.push({position:new cc.Point(500, 200), image:"images/kidney.png", score: 52 });
+        this.spawnPositions.push({position:new cc.Point(300, 180), image:"images/candybon.png", score: 100 });
+        
     
         this.leftBumper = new Bumper();
         this.leftBumper.rotation = 45;
@@ -205,10 +240,6 @@ Application.inherit(cc.Layer, {
         this.addChild(this.seesaw);
         
         this.spawnGift();
-        
-        //this.magnet = new Magnet(this.giftbox);
-        //this.magnet.setupPhysics(this.world);
-        //this.addChild(this.magnet);
         //this.rainGifts();
     },
     
@@ -299,6 +330,8 @@ $(function() {
         e.preventDefault();
     });
     
+    preventArrowKeyScrolling();
+    
     // I modified lib/cocos2d-beta2.js to make this work
     // this function does not work with the official release!
     function registerResource(path, mimetype, alias) {
@@ -319,6 +352,9 @@ $(function() {
     registerResource("images/money.png", "image/png");
     registerResource("images/magnet.png", "image/png");
     registerResource("images/ice.png", "image/png");
+    registerResource("images/snowman.png", "image/png");
+    registerResource("images/snowmanIcon.png", "image/png");
+    registerResource("images/magnetIcon.png", "image/png");
 
     // preload audio files
     // TODO integrate audio loading into the preloader
@@ -339,6 +375,8 @@ $(function() {
     registerAudio("hit");
     registerAudio("wut");
     registerAudio("music");
+    registerAudio("ice");
+    registerAudio("magnet");
     
     Audiomanager.instance.playMusic("music");
     

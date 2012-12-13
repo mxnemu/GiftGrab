@@ -36,6 +36,7 @@ Audiomanager.inherit(Object, {
         }, false);
         this.audios[alias].play();
         this.music = this.audios[alias];
+        this.music.volume = 0.65;
     },
     
     // provide urls like this: {"ogg": "audio/sound.ogg", "wav": "audio/conversions/sound.ogg"}

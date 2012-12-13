@@ -2,9 +2,9 @@ function Magnet(giftbox) {
     Magnet.superclass.constructor.call(this);
     this.giftbox = giftbox;
     this.position = new cc.Point(400, 250);
-    this.sprite = new cc.Sprite(new cc.Sprite({
+    this.sprite = new cc.Sprite({
         file: "images/magnet.png"
-    }));
+    });
     this.contentSize = new cc.Size(this.sprite.contentSize.width,this.sprite.contentSize.height);
     this.addChild(this.sprite);
 }
