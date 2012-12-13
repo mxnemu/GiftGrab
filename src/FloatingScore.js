@@ -3,13 +3,15 @@ function FloatingScore(score, args) {
     FloatingScore.superclass.constructor.call(this, args);
     this.string = ""+score;
     this.scale = 0;
-    this.targetColor[1,0.5,0.3];
+    this.numericColor = [255,255,255];
+    this.targetColor = [200,200,50];
 }
 
 FloatingScore.inherit(cc.Label, {
     destroyed:false,
     numericColor: [255,255,255],
     targetColor: [255,255,255],
+    
     update:function() {
     
         if (this.scale < 1) {
