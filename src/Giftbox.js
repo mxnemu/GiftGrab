@@ -5,13 +5,39 @@ function GiftBox() {
     this.addChild(new cc.Sprite({
         file: "images/giftbox.png"
     }));
+    
+    this.iceSprite = new cc.Sprite({
+        file: "images/ice.png"
+    });
 }
 
 GiftBox.inherit(PhysicsNode, {
     type: "giftbox",
+    slowMotion: false,
+    slowMotionTime: 0,
+    maxSlowMotionTime: 5,
+    
+    startSlowMotion: function() {
+        this.addChild(this.iceSprite);
+        this.slowMotion = true;
+    },
+    
+    update: function(dt) {
+        GiftBox.superclass.update.call(this, dt);
+        if (this.slowMotion) {
+            this.slowMotionTime += dt;
+            this.body.SetLinearVelocity(new b2Vec2(0,0));
+            this.body.SetAngularVelocity(0);
+            if (this.slowMotionTime >= this.maxSlowMotionTime) {
+                this.slowMotionTime = 0;
+                this.slowMotion = false;
+                this.removeChild(this.iceSprite);
+            }
+        }
+    },
     
     setupPhysics: function(world) {
-        this.createPhysics(world, {boundingBoxOffsetY:100, boundingBox: new cc.Size(50, 50)});
+        this.createPhysics(world, {boundingBoxOffsetY:100, boundingBox: new cc.Size(50, 50), density: 0.5});
     },
     
     onFreeze: function() {

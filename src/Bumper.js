@@ -11,6 +11,6 @@ Bumper.inherit(PhysicsNode, {
     type: "bumper",
     
     setupPhysics: function(world) {
-        this.createPhysics(world, {isStatic:true, restitution: 3});
+        this.createPhysics(world, {isStatic:true, restitution: 1.5});
     }
 });

@@ -25,10 +25,10 @@ Seesaw.inherit(PhysicsNode, {
         Seesaw.superclass.update.call(this);
         
         if (Input.instance.keysDown[37]) { // left arrow   
-            this.body.ApplyTorque(250);
+            this.body.ApplyTorque(300);
         }
         if (Input.instance.keysDown[39]) { // right arrow
-            this.body.ApplyTorque(-250);
+            this.body.ApplyTorque(-300);
         }        
     }
 });

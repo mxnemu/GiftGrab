@@ -89,6 +89,8 @@ Application.inherit(cc.Layer, {
     spawnPositions: [],
     lastSpawnPositionIndex: -1,
     giftSprites: ["images/kidney.png", "images/money.png"],
+    magnets: 1,
+    hourglasses: 1,
     // non physics objects that need an update
     // I'm too tired to fix this mess with a proper game class
     updateObjects:[], 
@@ -96,6 +98,19 @@ Application.inherit(cc.Layer, {
     // store inputs for realtime requests
     keyDown: function(event) {
         Input.instance.keysDown[event.keyCode] = true;
+        
+        // up spawn magnet
+        if (event.keyCode == 38 && (!this.magnet || this.magnet.destroyed)) {
+            this.magnet = new Magnet(this.giftbox);
+            this.magnet.setupPhysics(this.world);
+            this.addChild(this.magnet);
+        } 
+        
+        else if(event.keyCode == 40  && !this.giftbox.slowMotion) {
+            this.giftbox.startSlowMotion();
+        }
+        
+        
     },
     
     keyUp: function(event) {
@@ -165,8 +180,8 @@ Application.inherit(cc.Layer, {
         this.spawnPositions.push({position:new cc.Point(250, 250), image:"images/candycane.png", score: 10 });
         this.spawnPositions.push({position:new cc.Point(250, 350), image:"images/money.png", score: 10 });
         this.spawnPositions.push({position:new cc.Point(400, 250), image:"images/candycane.png", score: 10 });
-        this.spawnPositions.push({position:new cc.Point(400, 350), image:"images/kidney.png", score: 52 });
-        this.spawnPositions.push({position:new cc.Point(300, 350), image:"images/candybon.png", score: 100 });
+        this.spawnPositions.push({position:new cc.Point(550, 350), image:"images/kidney.png", score: 52 });
+        this.spawnPositions.push({position:new cc.Point(500, 400), image:"images/candybon.png", score: 100 });
     
         this.leftBumper = new Bumper();
         this.leftBumper.rotation = 45;
@@ -190,9 +205,11 @@ Application.inherit(cc.Layer, {
         this.addChild(this.seesaw);
         
         this.spawnGift();
-        //this.rainGifts();
         
-        $(".instructions").append("use left / right arrow keys to rotate the board");
+        //this.magnet = new Magnet(this.giftbox);
+        //this.magnet.setupPhysics(this.world);
+        //this.addChild(this.magnet);
+        //this.rainGifts();
     },
     
     // Here's the application's mainloop    
@@ -254,7 +271,7 @@ Application.inherit(cc.Layer, {
         
         for (var i=0; i < this.updateObjects.length; ++i) {
             if (!this.updateObjects[i].destroyed) {
-                this.updateObjects[i].update();
+                this.updateObjects[i].update(dt);
             } else {
                 this.updateObjects[i].destroy();
                 this.updateObjects.splice(i,1);
@@ -300,6 +317,8 @@ $(function() {
     registerResource("images/bumper.png", "image/png");
     registerResource("images/kidney.png", "image/png");
     registerResource("images/money.png", "image/png");
+    registerResource("images/magnet.png", "image/png");
+    registerResource("images/ice.png", "image/png");
 
     // preload audio files
     // TODO integrate audio loading into the preloader

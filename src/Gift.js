@@ -3,9 +3,11 @@ function Gift(imageName) {
     this.position = new cc.Point(250, 250);
     this.rotation = -25;
     imageName = imageName || "images/candybon.png";
-    this.addChild(new cc.Sprite({
+    this.sprite = new cc.Sprite({
         file: imageName
-    }));
+    })
+    this.addChild(this.sprite);
+    this.contentSize = new cc.Size(this.sprite.contentSize.width/2,this.sprite.contentSize.height/2);
 }
 
 Gift.inherit(PhysicsNode, {

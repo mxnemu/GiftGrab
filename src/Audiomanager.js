@@ -59,7 +59,8 @@ Audiomanager.inherit(Object, {
         
         if (!this.audios[alias]) {
             console.warn("could not load a supported audio file for the sound " + alias);
-            this.audios[alias] = {play:function(){}}; // insert failsave object
+            // insert failsave object
+            this.audios[alias] = {play:function(){},stop:function(){},addEventListener:function(){}}; 
             return;
         }
     }
