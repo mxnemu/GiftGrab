@@ -15,7 +15,7 @@ GiftBox.inherit(PhysicsNode, {
     type: "giftbox",
     slowMotion: false,
     slowMotionTime: 0,
-    maxSlowMotionTime: 5,
+    maxSlowMotionTime: 3,
     
     startSlowMotion: function() {
         this.addChild(this.iceSprite);
